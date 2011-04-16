@@ -94,6 +94,8 @@ Perm2 = [x-1 for x in [14,17,11,24,1,5,
     44,49,39,56,34,53,
     46,42,50,36,29,32]]
 
+skip = 0
+	
 def SBox(nr,we):
     wiersz = we[0]*2+we[5]
     kolumna = we[1]*8+we[2]*4+we[3]*2+we[4]
@@ -116,9 +118,9 @@ def PPerm(wejscie):
 
 def DES(wejscie,tryb):
     TTT=0;
-    if(TT=="D"):
+    if(tryb=="D"):
         TTT = 15;
-    elif(TT=="S"):
+    elif(tryb=="S"):
         TTT = 0;
     #initial perm
     wyjscie = 64*[0]
@@ -167,76 +169,6 @@ def przesuniecie(wej, ile):
     b.extend(wej[:ile])
     return b
 
-def szyfr_file(array,tryb):
-    new_file = [];
-    new_file.append(array[0])
-    for i in array[1:]:
-        new_file.append(DES(i,tryb))
-
-    return new_file
-
-def ati(arr):
-    return int("".join([str(x) for x in arr]),2)
-
-def write_file(file,file_arr,tryb):
-	f = open(file,"wb")
-	try:
-
-		last_idx = -1;
-		if(tryb=="S"):
-			f.write(chr(ati(file_arr[0])));
-			last_idx = len(file_arr)
-
-
-		for i in file_arr[1:last_idx]:
-			for j in range(8):
-				f.write(chr(ati(i[j*8:j*8+8])))
-		if(tryb=="D"):
-			skip = ati(file_arr[0])
-			rem_ost = file_arr[-1];
-			for i in range(8-skip):
-				f.write(chr(ati(rem_ost[i*8:i*8+8])))
-			
-	finally:
-		f.close()
-
-def read_file(file,tryb):
-	file_arr = []
-	f = open(file,"rb")
-	skip = 0;
-	try:
-		byte = f.read(1)
-		if(tryb=="D"):
-			skip = byte;
-			byte = f.read(1)
-		mini_byte = [];
-		i = 1;
-		while( byte != ""):
-			#file_arr.append(struct.unpack('i',byte)[0])
-
-			mini_byte.extend([int(x) for x in bin(ord(byte))[2:].zfill(8)]);
-			if(i==8):
-				file_arr.append(mini_byte)
-				mini_byte = [];
-				i=0;
-			#print ord(byte)
-			byte = f.read(1)
-			i+=1;
-	finally:
-		f.close()
-	if(i!=1):
-		dodaj = 9-i;
-		mini_byte.extend([0]*8*dodaj)
-		file_arr.append(mini_byte)
-
-	mini_byte = [int(x) for x in bin(9-i)[2:].zfill(8)]
-
-	file_arr.insert(0,mini_byte)
-        for i in file_arr:
-            print len(i),i
-	output_text = szyfr_file(file_arr, TT)
-	return output_text
-
 def klucz(wejscie):
     c = [0]*28
     d = [0]*28
@@ -258,6 +190,94 @@ def klucz(wejscie):
         for i in range(48):
             wynik2[i] = wynik[Perm2[i]]
         Keys.append(wynik2)
+
+def szyfr_file(array,tryb):
+    new_file = [];
+    #new_file.append(array[0])
+    for i in array:
+        new_file.append(DES(i,tryb))
+
+    return new_file
+
+def ati(arr):
+    return int("".join([str(x) for x in arr]),2)
+
+def write_file(file,file_arr,tryb):
+	f = open(file,"wb")
+	if(tryb=="S"):
+		try:
+			f.write(chr(ati(file_arr[0])));
+			for i in file_arr[1:]:
+				for j in range(8):
+					f.write(chr(ati(i[j*8:j*8+8])))
+		finally:
+			f.close()
+	if(tryb=="D"):
+		try:
+			#f.write(chr(ati(file_arr[0])));
+			for i in file_arr[:-1]:
+				for j in range(8):
+					f.write(chr(ati(i[j*8:j*8+8])))
+			
+			rem_ost = file_arr[-1];
+			for i in range(8-skip):
+				f.write(chr(ati(rem_ost[i*8:i*8+8])))
+		finally:
+			f.close()
+	
+def read_file(file,tryb):
+	file_arr = []
+	f = open(file,"rb")
+	if(tryb=="S"):
+		try:
+			byte = f.read(1)
+			mini_byte = [];
+			i = 1;
+			while( byte != ""):
+				#file_arr.append(struct.unpack('i',byte)[0])
+				mini_byte.extend([int(x) for x in bin(ord(byte))[2:].zfill(8)]);
+				if(i==8):
+					file_arr.append(mini_byte)
+					mini_byte = [];
+					i=0;
+				#print ord(byte)
+				byte = f.read(1)
+				i+=1;
+		finally:
+			f.close()
+		if(i!=1):
+			dodaj = 9-i;
+			mini_byte.extend([0]*8*dodaj)
+			file_arr.append(mini_byte)
+
+		mini_byte = [int(x) for x in bin(9-i)[2:].zfill(8)]
+
+		#wkladamy info
+		output_text = szyfr_file(file_arr, tryb)
+		output_text.insert(0,mini_byte)
+	
+	elif(tryb=="D"):
+		try:
+			byte = f.read(1)
+			skip = ord(byte);
+	#		print skip
+			byte = f.read(1);
+			mini_byte = [];
+			i = 1;
+			while( byte != ""):
+			#file_arr.append(struct.unpack('i',byte)[0])
+				mini_byte.extend([int(x) for x in bin(ord(byte))[2:].zfill(8)]);
+				if(i==8):
+					file_arr.append(mini_byte)
+					mini_byte = [];
+					i=0;
+				#print ord(byte)
+				byte = f.read(1)
+				i+=1;
+		finally:
+			f.close()
+		output_text = szyfr_file(file_arr,tryb)
+	return output_text
 
 k1 = [int(x) for x in bin(int("AEDDF10235EDD444",16))[2:].zfill(64)]
 klucz(k1)
