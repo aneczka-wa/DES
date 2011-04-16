@@ -1,3 +1,8 @@
+#3DES cryptosystem in Python.
+#authors: Anna Warpechowska (awarpechowska gmail.com)
+#		  Krzysztof Nowak 	(kiryx7 gmail.com)
+#
+# all rights reserved.
 import sys
 ip = [x-1 for x in [58, 50, 42, 34, 26, 18, 10, 2,
       60, 52, 44, 36, 28, 20, 12, 4,
@@ -199,6 +204,9 @@ def szyfr_file(array,tryb):
 
     return new_file
 
+def ita8(i):
+	return [int(x) for x in bin(i)[2:].zfill(8)]
+	
 def ati(arr):
     return int("".join([str(x) for x in arr]),2)
 
@@ -225,6 +233,15 @@ def write_file(file,file_arr,tryb):
 		finally:
 			f.close()
 	
+def read_key_from_file(file):
+	f = open(file,"r")
+	try:
+		k1 = f.readline()
+		k2 = f.readline()
+	finally:
+		f.close()
+	return (k1,k2)
+
 def read_file(file,tryb):
 	file_arr = []
 	f = open(file,"rb")
@@ -254,7 +271,7 @@ def read_file(file,tryb):
 
 		#wkladamy info
 		output_text = szyfr_file(file_arr, tryb)
-		output_text.insert(0,mini_byte)
+		skip = mini_byte
 	
 	elif(tryb=="D"):
 		try:
@@ -279,8 +296,26 @@ def read_file(file,tryb):
 		output_text = szyfr_file(file_arr,tryb)
 	return output_text
 
-k1 = [int(x) for x in bin(int("AEDDF10235EDD444",16))[2:].zfill(64)]
-klucz(k1)
+#k1 = [int(x) for x in bin(int("AEDDF10235EDD444",16))[2:].zfill(64)]
+#k2 = [int(x) for x in bin(int("EFE401AC34109EF8",16))[2:].zfill(64)]
+klucze = read_key_from_file(sys.argv[4])
+k1 = klucze[0]
+k2 = klucze[1]
 TT=sys.argv[1].upper()
-input_text = read_file(sys.argv[2],TT)
+if(TT == "S"):
+	klucz(k1)
+	input_text = read_file(sys.argv[2],"S")
+	klucz(k2)
+	input_text = szyfr_file(input_text,"D")
+	klucz(k1)
+	input_text = szyfr_file(input_text,"S")
+	input_text.insert(0,ita8(skip))
+elif(TT == "D"):
+	klucz(k1)
+	input_text = read_file(sys.argv[2],"D")
+	klucz(k2)
+	input_text = szyfr_file(input_text,"S")
+	klucz(k1)
+	input_text = szyfr_file(input_text,"D")
+
 write_file(sys.argv[3], input_text,TT)
